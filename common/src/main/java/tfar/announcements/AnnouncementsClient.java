@@ -14,14 +14,21 @@ public class AnnouncementsClient {
     static boolean shake;
     static long timestamp;
     static long time;
-    static long fadeTime = 1000;
+    static long fadeTime = 0;
+    static TextPosition textPosition;
 
 
     public static void renderOverlay(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         long currentTime = Util.getMillis();
         if (announcement != null && currentTime - timestamp <= time + fadeTime) {
             int x = guiGraphics.guiWidth() / 2;
-            int y = guiGraphics.guiHeight() / 2;
+            int y;
+
+            if (textPosition == TextPosition.CENTER) {
+                y = guiGraphics.guiHeight() / 2;
+            } else {
+                y = guiGraphics.guiHeight() * 3 / 4;
+            }
 
             if (shake) {
                 x += Math.random()*4;
@@ -45,5 +52,6 @@ public class AnnouncementsClient {
         size = packet.size();
         shake = packet.shake();
         time = packet.time() * 50L;
+        textPosition = packet.textPosition();
     }
 }

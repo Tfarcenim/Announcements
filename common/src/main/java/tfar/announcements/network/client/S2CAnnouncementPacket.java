@@ -7,9 +7,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import tfar.announcements.Announcements;
 import tfar.announcements.AnnouncementsClient;
+import tfar.announcements.TextPosition;
 import tfar.announcements.network.PacketHandler;
 
-public record S2CAnnouncementPacket(String text, ChatFormatting color,int size, boolean shake,int time) implements S2CModPacket {
+public record S2CAnnouncementPacket(String text, ChatFormatting color, int size, boolean shake, int time, TextPosition textPosition) implements S2CModPacket {
 
     public static final StreamCodec<RegistryFriendlyByteBuf, S2CAnnouncementPacket> STREAM_CODEC =
         StreamCodec.composite(
@@ -18,6 +19,7 @@ public record S2CAnnouncementPacket(String text, ChatFormatting color,int size, 
                 ByteBufCodecs.INT, S2CAnnouncementPacket::size,
                 ByteBufCodecs.BOOL, S2CAnnouncementPacket::shake,
                 ByteBufCodecs.INT, S2CAnnouncementPacket::time,
+                TextPosition.STREAM_CODEC, S2CAnnouncementPacket::textPosition,
                 S2CAnnouncementPacket::new);
 
     public static final Type<S2CAnnouncementPacket> TYPE = new Type<>(PacketHandler.packet(S2CAnnouncementPacket.class));

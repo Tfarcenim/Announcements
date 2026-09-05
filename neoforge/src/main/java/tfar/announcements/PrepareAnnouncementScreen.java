@@ -9,8 +9,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.DyeColor;
-import tfar.announcements.network.server.C2SSendAnnouncePacket;
+import tfar.announcements.network.server.C2SSendAnnouncementPacket;
 import tfar.announcements.platform.Services;
 
 public class PrepareAnnouncementScreen extends Screen {
@@ -33,6 +32,7 @@ public class PrepareAnnouncementScreen extends Screen {
     private boolean shake;
     private int size = 1;
     private ChatFormatting color = ChatFormatting.WHITE;
+    private TextPosition textPosition = TextPosition.CENTER;
 
     protected PrepareAnnouncementScreen(Component title) {
         super(title);
@@ -50,7 +50,7 @@ public class PrepareAnnouncementScreen extends Screen {
         textBox.setTextColor(-1);
         textBox.setTextColorUneditable(-1);
         //textBox.setBordered(false);
-        textBox.setMaxLength(50);
+        textBox.setMaxLength(64);
         textBox.setResponder(this::onTextInput);
         textBox.setValue("");
         this.addRenderableWidget(textBox);
@@ -61,7 +61,7 @@ public class PrepareAnnouncementScreen extends Screen {
         //timeBox.setBordered(false);
         timeBox.setMaxLength(9);
         timeBox.setResponder(this::onTextInput);
-        timeBox.setValue("20");
+        timeBox.setValue("30");
         this.addRenderableWidget(timeBox);
 
         Button button = Button.builder(Component.literal("Send Announcement"),button1 -> sendAnnouncement())
@@ -83,6 +83,17 @@ public class PrepareAnnouncementScreen extends Screen {
 
         Checkbox checkbox = Checkbox.builder(Component.empty(),font)
                 .pos(this.leftPos + 45, this.topPos + 97)
+                .onValueChange((checkbox1, value) -> {
+                    if (value) {
+                        textPosition = TextPosition.ACTION_BAR;
+                    } else {
+                        textPosition = TextPosition.CENTER;
+                    }
+                })
+                .build();
+
+        Checkbox actionBar = Checkbox.builder(Component.empty(),font)
+                .pos(this.leftPos + 135, this.topPos + 97)
                 .onValueChange((checkbox1, value) -> shake = value)
                 .build();
 
@@ -99,7 +110,18 @@ public class PrepareAnnouncementScreen extends Screen {
         }
 
         addRenderableWidget(checkbox);
+        addRenderableWidget(actionBar);
 
+        Checkbox limitToDimension = Checkbox.builder(Component.empty(),font)
+                .pos(this.leftPos + 45, this.topPos + 97)
+                .onValueChange((checkbox1, value) -> {
+                    if (value) {
+                        textPosition = TextPosition.ACTION_BAR;
+                    } else {
+                        textPosition = TextPosition.CENTER;
+                    }
+                })
+                .build();
     }
 
     void changeColor(ChatFormatting color) {
@@ -141,6 +163,8 @@ public class PrepareAnnouncementScreen extends Screen {
         guiGraphics.drawString(font, Component.literal("Time:"), leftPos+6, topPos + 66, 0x404040, false);
 
         guiGraphics.drawString(font, Component.literal("Shake:"), leftPos+6, topPos + 100, 0x404040, false);
+        guiGraphics.drawString(font, Component.literal("Action Bar:"), leftPos+72, topPos + 100, 0x404040, false);
+
     }
 
 
@@ -153,7 +177,7 @@ public class PrepareAnnouncementScreen extends Screen {
 
     public void sendAnnouncement() {
         int time = Integer.parseInt(timeBox.getValue());
-        Services.PLATFORM.sendToServer(new C2SSendAnnouncePacket(textBox.getValue(), color,size,shake,time));
+        Services.PLATFORM.sendToServer(new C2SSendAnnouncementPacket(textBox.getValue(), color,size,shake,time,textPosition));
         Minecraft.getInstance().setScreen(null);
     }
 }

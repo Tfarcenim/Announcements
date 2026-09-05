@@ -1,10 +1,12 @@
 package tfar.announcements;
 
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -13,6 +15,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
@@ -23,7 +26,6 @@ import tfar.announcements.network.client.S2CAnnouncementPacket;
 import tfar.announcements.network.client.S2CPrepareAnnouncementPacket;
 import tfar.announcements.platform.Services;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -44,27 +46,40 @@ public class AnnouncementsNeoForge {
     //(ex: /announce test red 20 (size) shake: true)
     void commands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
+
+
+
         dispatcher.register(Commands.literal("announce")
-                .then(Commands.argument("players", EntityArgument.players())
-                        .requires(Announcements::canSendAnnouncements)
-                        .then(Commands.argument("text", StringArgumentType.string())
-                                .then(Commands.argument("color", StringArgumentType.string())
-                                        .suggests(COLOR)
-                                        .then(Commands.argument("size", IntegerArgumentType.integer(1))
-                                                .then(Commands.argument("shake", BoolArgumentType.bool())
-                                                        .then(Commands.argument("time", IntegerArgumentType.integer(1))
-                                                                .executes(AnnouncementsNeoForge::announce)
-                                                        )
-                                                )
-                                        )
-                                )
-                        )
+                .then(thenCommon(AnnouncementsNeoForge::announce)
                 )
         );
+
+        dispatcher.register(Commands.literal("actionbar")
+                .then(thenCommon(AnnouncementsNeoForge::actionBar)
+                )
+        );
+
         dispatcher.register(Commands.literal("announcegui")
                 .requires(Announcements::canSendAnnouncements)
                 .executes(AnnouncementsNeoForge::announceGui)
         );
+    }
+
+    static RequiredArgumentBuilder<CommandSourceStack, EntitySelector> thenCommon(Command<CommandSourceStack> executes) {
+        return Commands.argument("players", EntityArgument.players())
+                .requires(Announcements::canSendAnnouncements)
+                .then(Commands.argument("text", StringArgumentType.string())
+                        .then(Commands.argument("color", StringArgumentType.string())
+                                .suggests(COLOR)
+                                .then(Commands.argument("size", IntegerArgumentType.integer(1))
+                                        .then(Commands.argument("shake", BoolArgumentType.bool())
+                                                .then(Commands.argument("time", IntegerArgumentType.integer(1))
+                                                        .executes(executes)
+                                                )
+                                        )
+                                )
+                        )
+                );
     }
 
     public static int announceGui(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -73,13 +88,21 @@ public class AnnouncementsNeoForge {
     }
 
     public static int announce(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        return commonExecute(context,TextPosition.CENTER);
+    }
+
+    public static int actionBar(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        return commonExecute(context,TextPosition.ACTION_BAR);
+    }
+
+    public static int commonExecute(CommandContext<CommandSourceStack> context,TextPosition textPosition) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "players");
         String text = StringArgumentType.getString(context, "text");
         ChatFormatting color = ChatFormatting.valueOf(StringArgumentType.getString(context, "color").toUpperCase(Locale.ROOT));
         int size = IntegerArgumentType.getInteger(context, "size");
         boolean shake = BoolArgumentType.getBool(context, "shake");
         int time = IntegerArgumentType.getInteger(context, "time");
-        Services.PLATFORM.sendToClients(new S2CAnnouncementPacket(text, color, size, shake, time), players);
+        Services.PLATFORM.sendToClients(new S2CAnnouncementPacket(text, color, size, shake, time,textPosition), players);
         return 1;
     }
 
