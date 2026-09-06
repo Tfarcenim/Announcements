@@ -54,7 +54,9 @@ dependencies {
         implementation "me.shedaniel.cloth:cloth-config-neoforge:$cloth_config_version"
         implementation "dev.architectury:architectury-neoforge:$architectury_version"
     }
-    implementation 'net.luckperms:api:5.4'
+    //implementation 'net.luckperms:api:5.4'
+   // implementation "curse.maven:luckperms-431733:5654231"
+    implementation "curse.maven:luckperms-431733:5971552"
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }

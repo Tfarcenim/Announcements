@@ -58,4 +58,6 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
     public void openScreen() {
         AnnouncementsClientNeoforge.openScreen();
     }
+
+
 }

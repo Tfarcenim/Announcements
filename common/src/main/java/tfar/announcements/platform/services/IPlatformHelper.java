@@ -4,7 +4,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
-import tfar.announcements.network.client.S2CAnnouncementPacket;
 import tfar.announcements.network.client.S2CModPacket;
 import tfar.announcements.network.server.C2SModPacket;
 
@@ -59,4 +58,5 @@ public interface IPlatformHelper {
     void sendToServer(C2SModPacket msg);
 
     void openScreen();
+
 }

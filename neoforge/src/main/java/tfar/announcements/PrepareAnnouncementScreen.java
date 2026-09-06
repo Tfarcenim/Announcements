@@ -8,9 +8,16 @@ import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import tfar.announcements.network.server.C2SSendAnnouncementPacket;
 import tfar.announcements.platform.Services;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class PrepareAnnouncementScreen extends Screen {
 
@@ -33,6 +40,7 @@ public class PrepareAnnouncementScreen extends Screen {
     private int size = 1;
     private ChatFormatting color = ChatFormatting.WHITE;
     private TextPosition textPosition = TextPosition.CENTER;
+    ResourceKey<Level> dimension;
 
     protected PrepareAnnouncementScreen(Component title) {
         super(title);
@@ -40,6 +48,7 @@ public class PrepareAnnouncementScreen extends Screen {
         this.titleLabelY = 6;
     }
 
+    Button dimensionButton;
     @Override
     protected void init() {
         super.init();
@@ -65,7 +74,7 @@ public class PrepareAnnouncementScreen extends Screen {
         this.addRenderableWidget(timeBox);
 
         Button button = Button.builder(Component.literal("Send Announcement"),button1 -> sendAnnouncement())
-                .bounds(this.leftPos+4, topPos +  this.imageHeight - 25, imageWidth-8, 14)
+                .bounds(this.leftPos+4, topPos +  this.imageHeight - 25, imageWidth-8, 16)
                 .build();
 
         addRenderableWidget(button);
@@ -113,15 +122,44 @@ public class PrepareAnnouncementScreen extends Screen {
         addRenderableWidget(actionBar);
 
         Checkbox limitToDimension = Checkbox.builder(Component.empty(),font)
-                .pos(this.leftPos + 45, this.topPos + 97)
+                .pos(this.leftPos + 65, this.topPos + 120)
                 .onValueChange((checkbox1, value) -> {
                     if (value) {
-                        textPosition = TextPosition.ACTION_BAR;
+                        if (dimension == null) {
+                            dimension = Level.OVERWORLD;
+                        }
                     } else {
-                        textPosition = TextPosition.CENTER;
+                        dimension = null;
                     }
+                    dimensionButton.active = value;
                 })
                 .build();
+
+        dimensionButton = Button.builder(Component.empty(),b -> {
+            cycleDimension();
+            b.setMessage(Component.literal(dimension.location().toString()));
+        })
+                .bounds(leftPos+92,topPos+120,140,16)
+                .build();
+
+        addRenderableWidget(limitToDimension);
+        dimensionButton.active = false;
+        addRenderableWidget(dimensionButton);
+    }
+
+    void cycleDimension() {
+        List<ResourceKey<Level>> levels = Minecraft.getInstance().getConnection().levels().stream().sorted().toList();
+        if (dimension == null) {
+            dimension = Level.OVERWORLD;
+        } else {
+            int index = levels.indexOf(dimension);
+            index++;
+            if (index >= levels.size()) {
+                dimension = Level.OVERWORLD;
+            } else {
+                dimension = levels.get(index);
+            }
+        }
     }
 
     void changeColor(ChatFormatting color) {
@@ -164,6 +202,7 @@ public class PrepareAnnouncementScreen extends Screen {
 
         guiGraphics.drawString(font, Component.literal("Shake:"), leftPos+6, topPos + 100, 0x404040, false);
         guiGraphics.drawString(font, Component.literal("Action Bar:"), leftPos+72, topPos + 100, 0x404040, false);
+        guiGraphics.drawString(font, Component.literal("Dimension:"), leftPos+6, topPos + 124, 0x404040, false);
 
     }
 
@@ -177,7 +216,7 @@ public class PrepareAnnouncementScreen extends Screen {
 
     public void sendAnnouncement() {
         int time = Integer.parseInt(timeBox.getValue());
-        Services.PLATFORM.sendToServer(new C2SSendAnnouncementPacket(textBox.getValue(), color,size,shake,time,textPosition));
+        Services.PLATFORM.sendToServer(new C2SSendAnnouncementPacket(textBox.getValue(), color,size,shake,time,textPosition,Optional.ofNullable(dimension)));
         Minecraft.getInstance().setScreen(null);
     }
 }
